@@ -9,7 +9,7 @@
     "url": "https://ednut.dev"
   },
   "scripts": {
-    "start": "node bot.js",
+    "start": "node DEBUG=grammy:* node bot.js",
     "webhook": "node webhook/index.js",
     "setup": "node  scripts/setup-env"
   },
