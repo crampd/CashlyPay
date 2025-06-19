@@ -1,7 +1,7 @@
 const { getAllCustomers, searchCustomers, saveCustomer, getCustomerByEmail, updateCustomer, deleteCustomerByEmail } = require('../db');
 const { createCustomer } = require('../services/stripe');
 const { InlineKeyboard } = require('grammy');
-const { writeFileSync, unlinkSync, existsSync, mkdirSync } = require('fs');
+const { writeFileSync, unlinkSync, existsSync, mkdirSync, createReadStream } = require('fs');
 const path = require('path');
 
 module.exports = async function customersCommand(ctx) {
@@ -59,11 +59,33 @@ module.exports.handleCallbackQuery = async function (ctx) {
           `"${c.name}","${c.email}","${c.phone || ''}","${c.address || ''}"`
         )
       ].join('\n');
-      const dir = path.join(__dirname, '../tmp');
-      if (!existsSync(dir)) mkdirSync(dir);
+      const dir = path.resolve(__dirname, '../tmp');
+      if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
       const filePath = path.join(dir, 'customers.csv');
       writeFileSync(filePath, csv);
-      await ctx.replyWithDocument({ source: filePath, filename: 'customers.csv' });
+
+      // Use createReadStream and pass directly to replyWithDocument as per grammY docs
+      // const file = await ctx.getfile(filePath);
+      // if (!file) throw new Error('Failed to create customer CSV file.');
+
+      // file path on the Bot API server
+      // const fileId = file.file_id;
+      // if (!fileId) throw new Error('Failed to get file ID for the customer CSV.');
+      // send the file
+      // await ctx.reply('Here is the customer export:' + '\n\n Download the file below.', {
+      //  reply_markup: {
+      //    InlineKeyboard: [
+      //      [{ text: 'Download Customer list', url: `https://api.telegram.org/file/bot${ctx.bot.token}/${fileId}` }]
+      //    ]
+      //  },
+      //  disable_notification: true
+      //});
+
+      // Alternatively, you can use ctx.replyWithDocument if you want to send it as a document
+       await ctx.replyWithDocument({ source: filePath, filename: 'customers.csv'});
+
+      // Clean up: remove the file after sending
+      
       unlinkSync(filePath);
     } catch (err) {
       return ctx.reply('❌ Export failed: ' + err.message);

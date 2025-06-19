@@ -12,19 +12,23 @@ module.exports = async function helpCommand(ctx) {
     '/start - Start the bot',
     '/help - Show this help message',
     '/faq - Frequently asked questions',
-    '/customers - Customer management menu',
-    '/invoice - Invoice management menu'
+//  '/customers - Customer management menu',
+//  '/invoice - Invoice management menu'
   ];
 
   if (['admin', 'manager'].includes(role)) {
     commands.push(
-      '/salesreport - Show sales report'
+      '/salesreport - Show sales report',
+      '/customers - Customer management menu',
+      '/invoice - Invoice management menu',
     );
   }
 
   if (role === 'admin') {
     commands.push(
-      '/admins - Manage admins'
+      '/admins - Manage admins',
+      '/settings - Bot settings menu',
+      '/export - Export data',
     );
   }
 
