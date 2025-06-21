@@ -1,41 +1,58 @@
-const { getAllCustomers, getInvoicesByEmail, getInvoiceById, saveInvoice } = require('../db');
+const { getAllCustomers, getInvoicesByEmail, getInvoiceById } = require('../db');
 const { createAndSendInvoice } = require('../services/invoiceManager');
+const { createPayPalInvoice } = require('../services/paypal');
+const { createSquareInvoice } = require('../services/square');
 const { InlineKeyboard } = require('grammy');
 
 module.exports = async function invoiceCommand(ctx) {
+  // Step 1: Choose service
   const keyboard = new InlineKeyboard()
-    .text('List invoices', 'invoices:list').row()
-    .text('Create invoice', 'invoices:create').row()
-    .text('View invoice', 'invoices:view').row();
-  return ctx.reply('Choose an invoice action:', { reply_markup: keyboard });
+    .text('Stripe', 'invoices:service:stripe')
+    .text('PayPal', 'invoices:service:paypal')
+    .text('Square', 'invoices:service:square').row()
+    .text('List invoices', 'invoices:list')
+    .text('View invoice', 'invoices:view');
+  return ctx.reply('Choose Service or Action:', { reply_markup: keyboard });
 };
 
 // Handle inline keyboard actions
 module.exports.handleCallbackQuery = async function (ctx) {
   await ctx.answerCallbackQuery();
   const data = ctx.callbackQuery.data;
-  if (data === 'invoices:list') {
-    ctx.session.invoiceAction = 'list';
-    return ctx.reply('Enter customer email to list invoices:');
-  }
-  if (data === 'invoices:create') {
-    ctx.session.invoiceAction = 'create';
-    ctx.session.createStep = 1;
+
+  // Step 2: Service selection
+  if (data.startsWith('invoices:service:')) {
+    const service = data.split(':')[2];
+    ctx.session.invoiceService = service;
+    ctx.session.invoiceAction = null;
+    ctx.session.createStep = null;
     ctx.session.createData = {};
     // List customers for selection
     const customers = await getAllCustomers();
     if (!customers.length) {
-      ctx.session.invoiceAction = null;
+      ctx.session.invoiceService = null;
       return ctx.reply('No customers found. Please add a customer first.');
     }
     const keyboard = new InlineKeyboard();
     customers.slice(0, 10).forEach(c => {
       keyboard.text(`${c.name} (${c.email})`, `invoices:select:${c.email}`).row();
     });
-    return ctx.reply('Select a customer to invoice:', { reply_markup: keyboard });
+    ctx.session.invoiceAction = 'create';
+    ctx.session.createStep = 1;
+    return ctx.reply(
+      `Service: ${service.charAt(0).toUpperCase() + service.slice(1)}\nSelect a customer to invoice:`,
+      { reply_markup: keyboard }
+    );
+  }
+
+  if (data === 'invoices:list') {
+    ctx.session.invoiceAction = 'list';
+    ctx.session.invoiceService = null;
+    return ctx.reply('Enter customer email to list invoices:');
   }
   if (data === 'invoices:view') {
     ctx.session.invoiceAction = 'view';
+    ctx.session.invoiceService = null;
     return ctx.reply('Enter invoice ID to view:');
   }
   if (data.startsWith('invoices:select:')) {
@@ -52,7 +69,8 @@ module.exports.handleCallbackQuery = async function (ctx) {
 // Handle multi-step flows for invoice actions
 module.exports.handleMessage = async function (ctx) {
   const action = ctx.session.invoiceAction;
-  if (!action) return;
+  const service = ctx.session.invoiceService;
+  if (!action && !service) return;
 
   // --- List invoices ---
   if (action === 'list') {
@@ -72,8 +90,8 @@ module.exports.handleMessage = async function (ctx) {
     }
   }
 
-  // --- Create invoice ---
-  if (action === 'create') {
+  // --- Create invoice (multi-step, multi-service) ---
+  if (action === 'create' && service) {
     const step = ctx.session.createStep;
     const text = ctx.message.text.trim();
     if (step === 2) {
@@ -86,30 +104,51 @@ module.exports.handleMessage = async function (ctx) {
       if (isNaN(amount) || amount <= 0) return ctx.reply('Invalid amount. Please enter a positive number:');
       ctx.session.createData.amount = amount;
       try {
-        // Get customer name for Stripe
+        // Get customer name for all services
         const customers = await getAllCustomers();
         const customer = customers.find(c => c.email === ctx.session.createData.email);
-        const { url, status, amount: finalAmount } = await createAndSendInvoice({
-          telegram_id: String(ctx.from.id),
-          name: customer ? customer.name : '',
-          email: ctx.session.createData.email,
-          description: ctx.session.createData.description,
-          amount: ctx.session.createData.amount
-        });
+        let result;
+        if (service === 'stripe') {
+          result = await createAndSendInvoice({
+            telegram_id: String(ctx.from.id),
+            name: customer ? customer.name : '',
+            email: ctx.session.createData.email,
+            description: ctx.session.createData.description,
+            amount: ctx.session.createData.amount
+          });
+        } else if (service === 'paypal') {
+          result = await createPayPalInvoice({
+            name: customer ? customer.name : '',
+            email: ctx.session.createData.email,
+            description: ctx.session.createData.description,
+            amount: ctx.session.createData.amount
+          });
+        } else if (service === 'square') {
+          result = await createSquareInvoice({
+            name: customer ? customer.name : '',
+            email: ctx.session.createData.email,
+            description: ctx.session.createData.description,
+            amount: ctx.session.createData.amount
+          });
+        } else {
+          throw new Error('Unknown service');
+        }
         ctx.session.invoiceAction = null;
         ctx.session.createStep = null;
         ctx.session.createData = null;
+        ctx.session.invoiceService = null;
         return ctx.reply(
-          `✅ Invoice created and sent to ${customer.email}.\n` +
-          `💵 Amount: $${finalAmount}\n` +
-          `📄 Status: ${status}\n` +
-          `🔗 [View Invoice](${url})`,
+          `✅ Invoice created via ${service.charAt(0).toUpperCase() + service.slice(1)} and sent to ${customer.email}.\n` +
+          `💵 Amount: $${result.amount}\n` +
+          `📄 Status: ${result.status}\n` +
+          `🔗 [View Invoice](${result.url || result.invoiceUrl})`,
           { parse_mode: 'Markdown' }
         );
       } catch (err) {
         ctx.session.invoiceAction = null;
         ctx.session.createStep = null;
         ctx.session.createData = null;
+        ctx.session.invoiceService = null;
         return ctx.reply('❌ Failed to create invoice: ' + err.message);
       }
     }

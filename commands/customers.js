@@ -1,7 +1,9 @@
 const { getAllCustomers, searchCustomers, saveCustomer, getCustomerByEmail, updateCustomer, deleteCustomerByEmail } = require('../db');
-const { createCustomer } = require('../services/stripe');
+const { createCustomer: createStripeCustomer } = require('../services/stripe');
+const { createPayPalCustomer } = require('../services/paypal');
+const { createSquareCustomer } = require('../services/square');
 const { InlineKeyboard } = require('grammy');
-const { writeFileSync, unlinkSync, existsSync, mkdirSync, createReadStream } = require('fs');
+const { writeFileSync, unlinkSync, existsSync, mkdirSync } = require('fs');
 const path = require('path');
 
 module.exports = async function customersCommand(ctx) {
@@ -33,6 +35,20 @@ module.exports.handleCallbackQuery = async function (ctx) {
     return ctx.reply('Enter name, email, or phone to search:');
   }
   if (data === 'customers:add') {
+    // Choose service for customer creation
+    const keyboard = new InlineKeyboard()
+      .text('Stripe', 'customers:add:stripe')
+      .text('PayPal', 'customers:add:paypal')
+      .text('Square', 'customers:add:square');
+    ctx.session.customerAction = null;
+    ctx.session.addStep = null;
+    ctx.session.addData = {};
+    ctx.session.customerService = null;
+    return ctx.reply('Choose platform to add customer:', { reply_markup: keyboard });
+  }
+  if (data.startsWith('customers:add:')) {
+    const service = data.split(':')[2];
+    ctx.session.customerService = service;
     ctx.session.customerAction = 'add';
     ctx.session.addStep = 1;
     ctx.session.addData = {};
@@ -63,29 +79,7 @@ module.exports.handleCallbackQuery = async function (ctx) {
       if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
       const filePath = path.join(dir, 'customers.csv');
       writeFileSync(filePath, csv);
-
-      // Use createReadStream and pass directly to replyWithDocument as per grammY docs
-      // const file = await ctx.getfile(filePath);
-      // if (!file) throw new Error('Failed to create customer CSV file.');
-
-      // file path on the Bot API server
-      // const fileId = file.file_id;
-      // if (!fileId) throw new Error('Failed to get file ID for the customer CSV.');
-      // send the file
-      // await ctx.reply('Here is the customer export:' + '\n\n Download the file below.', {
-      //  reply_markup: {
-      //    InlineKeyboard: [
-      //      [{ text: 'Download Customer list', url: `https://api.telegram.org/file/bot${ctx.bot.token}/${fileId}` }]
-      //    ]
-      //  },
-      //  disable_notification: true
-      //});
-
-      // Alternatively, you can use ctx.replyWithDocument if you want to send it as a document
-       await ctx.replyWithDocument({ source: filePath, filename: 'customers.csv'});
-
-      // Clean up: remove the file after sending
-      
+      await ctx.replyWithDocument({ source: filePath, filename: 'customers.csv'});
       unlinkSync(filePath);
     } catch (err) {
       return ctx.reply('❌ Export failed: ' + err.message);
@@ -96,7 +90,8 @@ module.exports.handleCallbackQuery = async function (ctx) {
 // Handle multi-step flows for customer actions
 module.exports.handleMessage = async function (ctx) {
   const action = ctx.session.customerAction;
-  if (!action) return;
+  const service = ctx.session.customerService;
+  if (!action && !service) return;
 
   // --- Search ---
   if (action === 'search') {
@@ -116,8 +111,8 @@ module.exports.handleMessage = async function (ctx) {
     }
   }
 
-  // --- Add ---
-  if (action === 'add') {
+  // --- Add (multi-platform) ---
+  if (action === 'add' && service) {
     const step = ctx.session.addStep;
     const text = ctx.message.text.trim();
     if (step === 1) {
@@ -141,25 +136,36 @@ module.exports.handleMessage = async function (ctx) {
     if (step === 4) {
       ctx.session.addData.address = text.toLowerCase() === 'skip' ? '' : text;
       try {
-        let customer = await getCustomerByEmail(ctx.session.addData.email);
-        let stripeCustomerId = (customer && customer.stripe_customer_id) ? customer.stripe_customer_id : null;
-        if (!stripeCustomerId) {
-          const stripeCustomer = await createCustomer(ctx.session.addData.name, ctx.session.addData.email);
-          stripeCustomerId = stripeCustomer.id;
+        let customerId = null;
+        if (service === 'stripe') {
+          const stripeCustomer = await createStripeCustomer(ctx.session.addData.name, ctx.session.addData.email);
+          customerId = stripeCustomer.id;
+        } else if (service === 'paypal') {
+          const paypalCustomer = await createPayPalCustomer(ctx.session.addData.name, ctx.session.addData.email);
+          customerId = paypalCustomer.id;
+        } else if (service === 'square') {
+          const squareCustomer = await createSquareCustomer(ctx.session.addData.name, ctx.session.addData.email);
+          customerId = squareCustomer.id;
+        } else {
+          throw new Error('Unknown service');
         }
         await saveCustomer({
           telegram_id: String(ctx.from.id),
           ...ctx.session.addData,
-          stripe_customer_id: stripeCustomerId
+          stripe_customer_id: service === 'stripe' ? customerId : '',
+          paypal_customer_id: service === 'paypal' ? customerId : '',
+          square_customer_id: service === 'square' ? customerId : ''
         });
         ctx.session.customerAction = null;
         ctx.session.addStep = null;
         ctx.session.addData = null;
-        return ctx.reply('✅ Customer added and saved to Stripe.');
+        ctx.session.customerService = null;
+        return ctx.reply(`✅ Customer added and saved to ${service.charAt(0).toUpperCase() + service.slice(1)}.`);
       } catch (err) {
         ctx.session.customerAction = null;
         ctx.session.addStep = null;
         ctx.session.addData = null;
+        ctx.session.customerService = null;
         return ctx.reply('❌ Failed to add customer: ' + err.message);
       }
     }
