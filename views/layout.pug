@@ -1,0 +1,72 @@
+//- Copyright 2020 Square Inc.
+ 
+//- Licensed under the Apache License, Version 2.0 (the "License");
+//- you may not use this file except in compliance with the License.
+//- You may obtain a copy of the License at
+ 
+//-     http://www.apache.org/licenses/LICENSE-2.0
+ 
+//- Unless required by applicable law or agreed to in writing, software
+//- distributed under the License is distributed on an "AS IS" BASIS,
+//- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//- See the License for the specific language governing permissions and
+//- limitations under the License. 
+
+doctype html
+html(lang="en" class="dark")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    meta(name="theme-color" content="#00D54B")
+    meta(name="description" content="Modern invoice management with Cash App style")
+    
+    //- Favicon
+    link(rel="icon" type="image/svg+xml" href="/images/logo.svg")
+    link(rel="alternate icon" type="image/png" href="/images/logo.png")
+    
+    //- Main Stylesheet
+    link(rel="stylesheet" href="/stylesheets/main.css")
+    block styles
+    
+    title Cashly - Modern Invoice Management
+    
+    //- Scripts
+    block scripts
+      script(defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js")
+  
+  body.dark
+    include ../public/images/sprites.svg
+    
+    //- Sidebar
+    aside.sidebar
+      .brand
+        img.brand__logo(src="/images/logo.svg" alt="Cashly")
+        h1.brand__name Cashly
+      
+      nav.nav
+        a.nav-item(href="/" class=currentPath === '/' ? 'active' : '')
+          svg: use(href="#icon-dashboard")
+          span Dashboard
+        
+        a.nav-item(href="/invoice" class=currentPath === '/invoice' ? 'active' : '')
+          svg: use(href="#icon-invoice")
+          span Invoices
+        
+        a.nav-item(href="/management" class=currentPath === '/management' ? 'active' : '')
+          svg: use(href="#icon-invoice")
+          span Management
+    
+    //- Main Content
+    main.content
+      .container
+        block content
+    
+    //- Footer
+    footer.footer
+      .container
+        .flex.items-center.justify-between(class="h-[var(--footer-height)]")
+          p.text-sm © 2025 CashlyPay. All rights reserved.
+          .flex.gap-md
+            a.text-sm(href="#") Terms
+            a.text-sm(href="#") Privacy
+            a.text-sm(href="#") Support

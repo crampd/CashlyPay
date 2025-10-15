@@ -1,0 +1,151 @@
+//- Copyright 2020 Square Inc.
+ 
+//- Licensed under the Apache License, Version 2.0 (the "License");
+//- you may not use this file except in compliance with the License.
+//- You may obtain a copy of the License at
+ 
+//-     http://www.apache.org/licenses/LICENSE-2.0
+ 
+//- Unless required by applicable law or agreed to in writing, software
+//- distributed under the License is distributed on an "AS IS" BASIS,
+//- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//- See the License for the specific language governing permissions and
+//- limitations under the License. 
+
+extends layout
+block styles
+  link(rel="stylesheet" href="/stylesheets/pages/management.css")
+
+block content
+  .dashboard
+    //- Page Header
+    header.section
+      .section-header
+        a.button.button-icon(href="/")
+          svg(width="20" height="20" viewBox="0 0 20 20" fill="none")
+            path(d="M10 1L2 10m0 0h16M2 10l8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+          span Back to Customers
+        
+        h1.page-title Customer Details
+      
+      .section-actions
+        if customer.cards && customer.cards.length > 0
+          button.button.button-secondary
+            svg.icon(width="20" height="20" viewBox="0 0 20 20")
+              path(d="M3 5a2 2 0 012-2h10a2 2 0 012 2v2H3V5zm0 4v6a2 2 0 002 2h10a2 2 0 002-2V9H3zm3 4h4m-4-2h2" stroke="currentColor" stroke-width="2" stroke-linecap="round")
+            span Card on file ending in #{customer.cards[0].last4}
+        else
+          button.button.button-secondary
+            svg.icon(width="20" height="20" viewBox="0 0 20 20")
+              path(d="M3 5a2 2 0 012-2h10a2 2 0 012 2v2H3V5zm0 4v6a2 2 0 002 2h10a2 2 0 002-2V9H3zm3 2h8" stroke="currentColor" stroke-width="2" stroke-linecap="round")
+            span No card on file
+    
+    //- Customer Info
+    .customer-card.mb-xl
+      .customer-header
+        div
+          h2.customer-name #{customer.givenName} #{customer.familyName}
+          if customer.emailAddress
+            p.customer-meta
+              svg.icon(width="16" height="16" viewBox="0 0 16 16")
+                path(d="M1.5 3.5v9a1 1 0 001 1h11a1 1 0 001-1v-9a1 1 0 00-1-1h-11a1 1 0 00-1 1zm1 .5l5.5 4 5.5-4m-11 8v-7l5.5 4 5.5-4v7h-11z" stroke="currentColor")
+              span #{customer.emailAddress}
+    
+    //- Services Section
+    section.section
+      .section-header
+        h3.section-title Available Services
+        .section-actions
+          button.button.button-primary(type="button")
+            svg.icon(viewBox="0 0 20 20")
+              path(d="M10 5v10m5-5H5" stroke="currentColor" stroke-width="2" stroke-linecap="round")
+            span Add Service
+
+      if serviceItems && serviceItems.length
+        .service-grid
+          each item, index in serviceItems
+            .service-card
+              .service-card__content
+                h4.service-card__title #{item.name}
+                p.service-card__price $#{(item.priceAmount/100).toFixed(2)}
+                if item.description
+                  p.service-card__description #{item.description}
+              
+              form.service-card__action(id=`create-invoice-${index}` action='/invoice/create' method='post')
+                input(type='hidden' name='locationId' value=locationId)
+                input(type='hidden' name='idempotencyKey' value=idempotencyKey + `_${index}`)
+                input(type='hidden' name='customerId' value=customer.id)
+                input(type='hidden' name='name' value=item.name)
+                input(type='hidden' name='priceAmount' value=item.priceAmount)
+                button.button.button-primary(type="submit")
+                  svg.icon(viewBox="0 0 20 20")
+                    path(d="M4 10h12m-6-6v12" stroke="currentColor" stroke-width="2" stroke-linecap="round")
+                  span Create Invoice
+      else
+        .empty-state
+          svg.empty-state__icon(viewBox="0 0 24 24" width="48" height="48")
+            path(d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="2" stroke-linecap="round")
+          h3.empty-state__title No Services Available
+          p.empty-state__message This customer has no services configured yet.
+          button.button.button-primary
+            svg.icon(viewBox="0 0 20 20")
+              path(d="M10 5v10m5-5H5" stroke="currentColor" stroke-width="2" stroke-linecap="round")
+            span Add First Service
+
+    //- Invoices Section
+    section.section
+      .section-header
+        h3.section-title Recent Invoices
+        .section-actions
+          .search-box
+            svg.icon.search-icon(viewBox="0 0 20 20")
+              path(d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" fill="currentColor")
+            input.search-input(type="text" placeholder="Search invoices by number or title...")
+          
+          select.select-filter
+            option(value="all") All Invoices
+            option(value="draft") Draft
+            option(value="pending") Pending
+            option(value="paid") Paid
+      
+      if invoices && invoices.length
+        .invoice-list
+          each invoice in invoices
+            a.invoice-item(href=`/invoice/view/${locationId}/${customer.id}/${invoice.id}`)
+              .invoice-item__left
+                .invoice-item__header
+                  h4.invoice-item__title ##{invoice.invoiceNumber} #{invoice.title || 'Untitled Invoice'}
+                  case invoice.status
+                    when "DRAFT"
+                      span.badge.badge-warning Draft
+                    when "UNPAID"
+                      span.badge.badge-warning Unpaid
+                    when "PAID"
+                      span.badge.badge-success Paid
+                    when "OVERDUE"
+                      span.badge.badge-error Overdue
+                    default
+                      span.badge #{invoice.status}
+                
+                .invoice-item__meta
+                  .meta-item
+                    svg.icon(viewBox="0 0 20 20")
+                      path(d="M6 2h8a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm0 2v14h8V4H6zm2 2h4m-4 3h4m-4 3h4" stroke="currentColor" stroke-width="2" stroke-linecap="round")
+                    span Due #{formatDate(invoice.paymentRequests[0].dueDate)}
+                  
+                  if invoice.paymentRequests[0].computedAmountMoney
+                    .meta-item
+                      svg.icon(viewBox="0 0 20 20")
+                        path(d="M10 2a8 8 0 100 16 8 8 0 000-16zM5.5 10h9M8 7l-3 3 3 3m4-6l3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+                      span.amount $#{(parseInt(invoice.paymentRequests[0].computedAmountMoney.amount) / 100).toFixed(2)}
+              
+              .invoice-item__right
+                button.button.button-icon
+                  svg.icon(viewBox="0 0 20 20")
+                    path(d="M7 3l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+      else
+        .empty-state
+          svg.empty-state__icon(viewBox="0 0 24 24" width="48" height="48")
+            path(d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round")
+          h3.empty-state__title No Invoices Yet
+          p.empty-state__message Create your first invoice using one of the services above.
