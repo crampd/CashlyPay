@@ -16,6 +16,7 @@ Licensed under the Apache License, Version 2.0
 /* Base Imports */
 @import 'base/theme.css';
 @import 'base/reset.css';
+@import 'base/responsive.css';
 
 /* Component Imports */
 @import 'components/buttons.css';

@@ -42,11 +42,25 @@ router.get('/view/:locationId/:customerId/:invoiceId', async (req, res, next) =>
       result: { invoice },
     } = await invoicesApi.getInvoice(invoiceId);
 
+    // Helper function to format dates
+    const formatDate = (dateString) => {
+      if (!dateString) return 'Not specified';
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric'
+      }).format(date);
+    };
+
     // Render the invoice detail view page
     res.render('invoice', {
       locationId,
       customerId,
       invoice,
+      formatDate,
       idempotencyKey: crypto.randomUUID(),
     });
   } catch (error) {
@@ -88,9 +102,7 @@ router.post('/create', async (req, res, next) => {
     const currency = locationResponse.result.location.currency;
 
     // Step 3: Create an order to be attached to the invoice
-    const {
-      result: { order },
-    } = await ordersApi.createOrder({
+    const orderRequest = {
       order: {
         locationId,
         customerId,
@@ -106,7 +118,11 @@ router.post('/create', async (req, res, next) => {
         ],
       },
       idempotencyKey, // Unique identifier for request
-    });
+    };
+
+    const {
+      result: { order },
+    } = await ordersApi.createOrder(orderRequest);
 
     // We set two important time below, scheduledAt and dueDate.
     // scheduledAt is when the invoice will be delivered to the buyer
@@ -162,6 +178,7 @@ router.post('/create', async (req, res, next) => {
         deliveryMethod: 'EMAIL',
         orderId: order.id,
         title: name,
+        description: `Service: ${name}`,
         scheduledAt: scheduledAtString,
         primaryRecipient: {
           customerId,
@@ -172,6 +189,8 @@ router.post('/create', async (req, res, next) => {
           squareGiftCard: true,
           card: false,
         },
+        // Ensure line items are transferred from order
+        lineItems: order.lineItems,
       },
     };
 

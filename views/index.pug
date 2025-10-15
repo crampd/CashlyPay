@@ -15,21 +15,47 @@
 extends layout
 
 block styles
-  link(rel="stylesheet" href="/stylesheets/index.css")
+  link(rel="stylesheet" href="/stylesheets/pages/customers.css")
 
 block content
-  div(class="container")
-    div(class="subtitle") Invoices API Sample App
-    div(class="title") Telson Contractors
-    div(class="title-description") This is an example to show developers how to 
-      | use Square Invoices API to manage invoices for a contractor.
-    div(class="customers-list-title") Customers
-    div(class="customers-list")
+  main(class="dashboard")
+    header(class="page-header")
+      div(class="container")
+        div(class="header-content")
+          div(class="header-text")
+            p(class="subtitle") CashlyPay
+            h1(class="title") Telson Contractors
+            p(class="title-description") Flashing management solution for contractors
+    
+    section(class="customers-section")
+      div(class="container")
+        div(class="section-header")
+          h2(class="customers-list-title") Clients Profile
+          div(class="section-actions")
+            div(class="search-box")
+              svg.icon.search-icon(viewBox="0 0 20 20")
+                path(d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" fill="currentColor")
+              input.search-input(type="text" placeholder="Search clients...")
+            
+        div(class="customers-list")
       each customer, index in customers
         div(class="customer-card")
-          a(href=`/management/${locationId}/${customer.id}`)
-            div(class="customer-name") #{customer.givenName} #{customer.familyName}
-            div(class="customer-info") Card on file: #{customer.cards ? `${customer.cards[0].cardBrand} ending in ${customer.cards[0].last4}` : "None"}
+          a(href=`/management/${locationId}/${customer.id}` class="customer-link")
+            div(class="customer-content")
+              div(class="customer-info-group")
+                div(class="customer-name") #{customer.givenName} #{customer.familyName}
+                div(class="customer-meta")
+                  if customer.cards && customer.cards.length
+                    div(class="card-badge card-badge--active")
+                      svg.icon(width="20" height="20" viewBox="0 0 20 20")
+                        path(d="M3 5a2 2 0 012-2h10a2 2 0 012 2v2H3V5zm0 4v6a2 2 0 002 2h10a2 2 0 002-2V9H3zm3 4h4m-4-2h2" stroke="currentColor" stroke-width="2" stroke-linecap="round")
+                      span #{customer.cards[0].cardBrand} •••• #{customer.cards[0].last4}
+                  else
+                    div(class="card-badge card-badge--inactive")
+                      svg.icon(width="20" height="20" viewBox="0 0 20 20")
+                        path(d="M3 5a2 2 0 012-2h10a2 2 0 012 2v2H3V5zm0 4v6a2 2 0 002 2h10a2 2 0 002-2V9H3zm3 2h8" stroke="currentColor" stroke-width="2" stroke-linecap="round")
+                      span No card on file
+              
             div(class="customer-card__right")
-              svg(width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg")
-                path(d="M1 1L7 7L1 13" stroke="#D0D3D6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+              svg.icon-arrow(width="20" height="20" viewBox="0 0 20 20" fill="none")
+                path(d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
