@@ -282,11 +282,11 @@
   .customer-card {
     border: 2px solid CanvasText;
   }
-  
+
   .customer-card:hover {
     border-color: Highlight;
   }
-  
+
   .search-input {
     border: 2px solid CanvasText;
   }

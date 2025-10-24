@@ -51,7 +51,7 @@ router.get('/view/:locationId/:customerId/:invoiceId', async (req, res, next) =>
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
-        minute: 'numeric'
+        minute: 'numeric',
       }).format(date);
     };
 
