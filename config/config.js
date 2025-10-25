@@ -10,9 +10,19 @@ module.exports = {
 
   // Square API Configuration
   square: {
-    environment: process.env.SQUARE_ENVIRONMENT || 'sandbox',
+    /**
+     * Insert your Square Access Token here or via environment variable.
+     * Example: SQUARE_ACCESS_TOKEN=<SQUARE_ACCESS_TOKEN>
+     */
     accessToken: process.env.SQUARE_ACCESS_TOKEN,
+    /**
+     * Insert your Square Application ID here or via environment variable.
+     * Example: SQUARE_APP_ID=<SQUARE_APP_ID>
+     */
+    appId: process.env.SQUARE_APP_ID,
+    environment: process.env.SQUARE_ENVIRONMENT || 'sandbox',
     locationId: process.env.SQUARE_LOCATION_ID,
+    webhookSignatureKey: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY,
   },
 
   // Security Configuration

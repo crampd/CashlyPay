@@ -1,3 +1,55 @@
+# CashlyPay – Freelancer & Contractor Hub
+
+CashlyPay is a Square-native invoicing hub tailored for freelancers and contractors. The app keeps Square as the single source of truth and layers lightweight workflows for client management, invoicing, analytics, and real-time updates—no external database required.
+
+## Feature Highlights
+
+- **Client Management** – Create and update customer profiles via Square Customers API, including metadata-driven tagging (`/api/customers`).
+- **Invoice Lifecycle** – Create, publish, and track invoices using Square Orders + Invoices APIs (`/api/invoices`).
+- **AI-assisted Drafts** – Generate draft line items from natural language prompts (stubbed in `/api/invoices/ai`, ready to swap for an LLM).
+- **Payment Insights** – Live dashboard cards and charts powered by Square Payments and Invoices analytics (`/api/analytics`).
+- **Automated Reminders** – Invoice creation flow configures reminders and card-on-file auto-charging when available.
+- **Webhooks** – `/api/webhooks/square` endpoint prepared for invoice event notifications with signature verification.
+
+## API Surface
+
+| Method | Endpoint | Description |
+| ------ | -------- | ----------- |
+| `GET` | `/api/customers` | List Square customers with CashlyPay tags. |
+| `POST` | `/api/customers` | Create a customer profile with optional tags. |
+| `GET` | `/api/customers/:customerId` | Retrieve detailed customer profile. |
+| `PUT` | `/api/customers/:customerId/tags` | Upsert customer tags stored as Square custom attributes. |
+| `POST` | `/api/invoices` | Create a draft invoice (auto schedules reminders & card-on-file charge when possible). |
+| `POST` | `/api/invoices/publish` | Publish an invoice once reviewed. |
+| `POST` | `/api/invoices/ai` | Turn a natural-language prompt into an invoice draft payload. |
+| `GET` | `/api/invoices/customer/:customerId?locationId=` | Retrieve invoices for a specific customer/location. |
+| `GET` | `/api/invoices/summary/:locationId` | Aggregate totals for open, paid, and overdue invoices. |
+| `GET` | `/api/analytics/summary/:locationId` | Dashboard metrics (counts, revenue, avg payment time). |
+| `GET` | `/api/analytics/payments?limit=` | Recent Square payments feed. |
+| `POST` | `/api/webhooks/square` | Webhook receiver for Square invoice lifecycle events. |
+
+## Configuration
+
+Add a `.env` file based on `.env.example` and replace the placeholders with your Square credentials:
+
+```env
+SQUARE_APP_ID=<SQUARE_APP_ID>
+SQUARE_ACCESS_TOKEN=<SQUARE_ACCESS_TOKEN>
+SQUARE_ENVIRONMENT=sandbox
+SQUARE_LOCATION_ID=<SQUARE_LOCATION_ID>
+SQUARE_WEBHOOK_SIGNATURE_KEY=<SQUARE_WEBHOOK_SIGNATURE_KEY>
+```
+
+Optional keys for SendGrid, Twilio, or AWS S3 integrations are included but disabled by default.
+
+## Frontend Overview
+
+- `views/dashboard.pug` renders the mobile-first dashboard shell.
+- `public/javascripts/dashboard.js` fetches analytics, recent payments, and renders live charts with Chart.js.
+- Existing management and invoice views remain available for guided invoice workflows.
+
+> ℹ️ The sections below describe the upstream Square sample app that CashlyPay builds upon. They are retained for reference.
+
 # Useful Links
 
 - [Node.js SDK Page](https://developer.squareup.com/docs/sdks/nodejs)

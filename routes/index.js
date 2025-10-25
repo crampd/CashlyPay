@@ -17,7 +17,8 @@ limitations under the License.
 const express = require('express');
 const managementRoute = require('./management');
 const invoiceRoute = require('./invoice');
-const { customersApi, locationsApi } = require('../util/square-client');
+const { customersApi, locationsApi } = require('../services/square-client');
+const { getInvoiceSummary, listRecentPayments } = require('../services/analytics-service');
 
 const router = express.Router();
 
@@ -30,6 +31,27 @@ const router = express.Router();
  */
 router.use('/management', managementRoute);
 router.use('/invoice', invoiceRoute);
+
+router.get('/dashboard', async (req, res, next) => {
+  try {
+    const {
+      result: { location },
+    } = await locationsApi.retrieveLocation('main');
+
+    const [summary, payments] = await Promise.all([
+      getInvoiceSummary(location.id),
+      listRecentPayments(5),
+    ]);
+
+    res.render('dashboard', {
+      locationId: location.id,
+      summary,
+      payments,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 /**
  * Matches: GET /

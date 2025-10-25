@@ -16,7 +16,7 @@ limitations under the License.
 
 const express = require('express');
 const crypto = require('crypto');
-const { customersApi, invoicesApi } = require('../util/square-client');
+const { customersApi, invoicesApi } = require('../services/square-client');
 
 const router = express.Router();
 

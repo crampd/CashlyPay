@@ -1,7 +1,14 @@
 extends layout
 
+block append scripts
+  script(src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js")
+  script.
+    window.cashlypay = window.cashlypay || {};
+    window.cashlypay.locationId = '!{locationId}';
+  script(src="/javascripts/dashboard.js")
+
 block content
-  .dashboard-layout
+  .dashboard-layout(data-location-id=locationId)
     .sidebar
       .nav-brand
         img.brand-logo(src="/images/logo.svg" alt="Cashly")
@@ -34,7 +41,7 @@ block content
 
     .main-content
       .dashboard-header
-        h2.page-title Welcome back
+        h2.page-title CashlyPay Dashboard
         .nav-search
           input.search-input(type="search" placeholder="Search transactions...")
           svg.search-icon(width="20" height="20" viewBox="0 0 20 20" fill="none")
@@ -43,80 +50,68 @@ block content
       .grid-auto-fit
         .card.stats-card
           .stats-header
-            h3.stats-title Total Balance
-            .stats-change.positive +2.4%
-          .stats-value $24,567.89
+            h3.stats-title Open Invoices
+            .stats-change(class=summary.openCount > 0 ? 'positive' : 'neutral')
+              | #{summary.openCount} open
+          .stats-value= `${(summary.openAmount || 0) / 100} ${summary.currency}`
           canvas.stats-chart#balanceChart
 
         .card.stats-card
           .stats-header
-            h3.stats-title Monthly Revenue
-            .stats-change.positive +5.7%
-          .stats-value $12,345.67
+            h3.stats-title Total Revenue
+            .stats-change.positive #{summary.paidCount} paid
+          .stats-value= `${(summary.totalRevenue || 0) / 100} ${summary.currency}`
           canvas.stats-chart#revenueChart
 
         .card.stats-card
           .stats-header
-            h3.stats-title Active Invoices
-            .stats-change.negative -1.2%
-          .stats-value 28
+            h3.stats-title Overdue Invoices
+            .stats-change(class=summary.overdueCount > 0 ? 'negative' : 'positive')
+              | #{summary.overdueCount} overdue
+          .stats-value= `${(summary.overdueAmount || 0) / 100} ${summary.currency}`
           canvas.stats-chart#invoicesChart
 
       .grid-col-2
         .card.chart-card
           .chart-header
             h3 Cash Flow
-            .chart-controls
-              button.button.button-ghost.button-sm Last 7 Days
-              button.button.button-ghost.button-sm Last 30 Days
-              button.button.button-ghost.button-sm.active All Time
           canvas#cashFlowChart
           .chart-legend
             .legend-item
               .legend-color(style="background: var(--theme-accent)")
-              span Income
+              span Paid
             .legend-item
               .legend-color(style="background: rgba(255,59,48,0.5)")
-              span Expenses
+              span Outstanding
 
         .card
           h3.card-title Recent Transactions
           .transaction-list
-            .transaction-card
-              .transaction-icon 📥
-              .transaction-details
-                .transaction-title Payment Received
-                .transaction-date Oct 15, 2025
-              .transaction-amount.positive +$1,234.56
-            
-            .transaction-card
-              .transaction-icon 📤
-              .transaction-details
-                .transaction-title Invoice Payment
-                .transaction-date Oct 14, 2025
-              .transaction-amount.negative -$567.89
-            
-            .transaction-card
-              .transaction-icon 💳
-              .transaction-details
-                .transaction-title Subscription
-                .transaction-date Oct 13, 2025
-              .transaction-amount.negative -$29.99
+            if payments && payments.length
+              each payment in payments
+                .transaction-card
+                  .transaction-icon #{payment.cardDetails ? '💳' : '💵'}
+                  .transaction-details
+                    .transaction-title= payment.note || payment.paymentId || 'Payment'
+                    .transaction-date= new Date(payment.createdAt).toLocaleDateString()
+                  .transaction-amount.positive +#{(payment.totalMoney.amount || 0) / 100} #{payment.totalMoney.currency}
+            else
+              p.transaction-empty No recent payments found.
 
       .section-elevated
         h3 Quick Actions
         .grid-auto-fit
-          button.button.button-primary.button-icon
+          button.button.button-primary.button-icon(data-action="new-invoice")
             svg(width="24" height="24" viewBox="0 0 24 24" fill="none")
               path(d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor")
             span New Invoice
           
-          button.button.button-secondary.button-icon
+          button.button.button-secondary.button-icon(data-action="send-reminder")
             svg(width="24" height="24" viewBox="0 0 24 24" fill="none")
               path(d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" fill="currentColor")
             span Send Payment
           
-          button.button.button-ghost.button-icon
+          button.button.button-ghost.button-icon(data-action="generate-report")
             svg(width="24" height="24" viewBox="0 0 24 24" fill="none")
               path(d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-2V9h-2V7h4v10z" fill="currentColor")
             span Generate Report
