@@ -1,20 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Main Background Circle with subtle gradient -->
+<svg width="96" height="32" viewBox="0 0 96 32" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00D54B" />
-      <stop offset="100%" style="stop-color:#00B341" />
+    <linearGradient id="cashlypayGradient" x1="0" y1="0" x2="96" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00D54B"/>
+      <stop offset="1" stop-color="#00A75A"/>
+    </linearGradient>
+    <linearGradient id="cashGlyph" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1F1F1F"/>
+      <stop offset="1" stop-color="#050505"/>
     </linearGradient>
   </defs>
-  
-  <!-- Background Circle -->
-  <circle cx="256" cy="256" r="256" fill="url(#logoGradient)"/>
-  
-  <!-- Cashly Symbol - Modern Dollar Sign -->
-  <path d="M296 151.2c-26.4-13.6-55.2-20.4-86.4-20.4v-40.8h-28.8v40.8c-38.4 2.4-67.2 13.6-86.4 32.8-19.2 19.2-28.8 42.4-28.8 68.8 0 27.2 8.8 48.8 26.4 64.8 17.6 16 45.6 28.8 84 38.4 31.2 8 52.8 16.8 64.8 25.6 12 8.8 18.4 20.8 18.4 36 0 16-6.4 28.8-19.2 38.4-12.8 9.6-31.2 14.4-55.2 14.4-28.8 0-52-7.2-69.6-21.6-17.6-14.4-27.2-34.4-28.8-60h-40.8c1.6 36 14.4 64.8 38.4 86.4 24 21.6 56 33.6 96 35.2v40.8h28.8v-40.8c40-2.4 71.2-13.6 92.8-32.8 21.6-19.2 32.8-44 32.8-73.6 0-28-8.8-50.4-26.4-67.2-17.6-16.8-46.4-30.4-86.4-40-32-8-54.4-16-66.4-24-12-8-18.4-19.2-18.4-33.6 0-15.2 6.4-27.2 19.2-36 12.8-8.8 30.4-13.6 52.8-13.6 24 0 44 6.4 60 18.4 16 12 24.8 28.8 27.2 50.4h40.8c-2.4-32-14.4-57.6-36-76.8z" 
-        fill="white"/>
-        
-  <!-- Subtle Highlight -->
-  <circle cx="256" cy="236" r="180" fill="white" fill-opacity="0.1"/>
+
+  <rect x="2" y="2" width="28" height="28" rx="14" fill="url(#cashGlyph)"/>
+  <path d="M18.5 10.25c-1.02-.68-2.4-1.21-3.98-1.21-2.88 0-4.6 1.54-4.6 3.74 0 2.1 1.5 3.2 3.9 3.74l1.22.28c1.44.34 2.16.8 2.16 1.62 0 .96-.94 1.6-2.32 1.6-1.5 0-2.8-.64-3.74-1.7l-2.02 1.86c1.22 1.54 3.06 2.52 5.6 2.62v1.92h2.28v-1.98c2.62-.32 4.46-1.96 4.46-4.32 0-2.14-1.24-3.3-3.84-3.92l-1.44-.34c-1.26-.3-1.98-.68-1.98-1.48 0-.82.74-1.38 2.02-1.38 1.2 0 2.24.46 3.06 1.2l1.94-1.78c-.8-.9-1.66-1.46-2.92-1.97Z" fill="url(#cashlypayGradient)"/>
+
+  <text x="36" y="22" font-family="Inter, 'Square Sans', sans-serif" font-size="18" font-weight="700" fill="#FFFFFF" letter-spacing="0.02em">
+    CashlyPay
+  </text>
+  <rect x="34" y="6" width="58" height="20" rx="10" fill="url(#cashlypayGradient)" opacity="0.08"/>
 </svg>

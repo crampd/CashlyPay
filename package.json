@@ -1,23 +1,18 @@
 {
-  "name": "cashly",
+  "name": "cashlypay",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "start": "NODE_ENV=production node ./bin/www",
-    "dev": "NODE_ENV=development nodemon -e js,pug,css ./bin/www",
-    "test": "NODE_ENV=sandbox nodemon -e js,pug ./bin/www",
-    "seed": "NODE_ENV=sandbox node ./bin/script/seed-data.js generate",
-    "seed:clear": "NODE_ENV=sandbox node ./bin/script/seed-data.js clear",
+    "test": "NODE_ENV=development nodemon -e js,pug,css ./bin/www",
     "build": "npm run build:css",
     "build:css": "postcss public/stylesheets/main.css -o public/stylesheets/main.min.css",
-    "watch:css": "postcss public/stylesheets/main.css -o public/stylesheets/main.min.css --watch",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write '**/*.{js,json,css,md}'",
-    "analyze": "source-map-explorer 'public/**/*.js'",
-    "audit": "npm audit && npm outdated"
+    "seed": "NODE_ENV=sandbox node ./bin/script/seed-data.js generate",
+    "seed:clear": "NODE_ENV=sandbox node ./bin/script/seed-data.js clear"
   },
   "dependencies": {
+    "asynckit": "^0.4.0",
     "axios": "^1.12.2",
     "body-parser": "^1.19.0",
     "colors": "^1.4.0",
@@ -31,6 +26,7 @@
     "express-rate-limit": "^7.5.1",
     "helmet": "^7.2.0",
     "joi": "^17.11.0",
+    "mime-db": "^1.54.0",
     "morgan": "^1.10.0",
     "pug": "^3.0.0",
     "serve-favicon": "^2.5.0",

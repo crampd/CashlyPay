@@ -143,19 +143,21 @@ block content
                 tbody
                   if invoice.lineItems && invoice.lineItems.length
                     each item in invoice.lineItems
+                      - const baseAmount = item?.basePriceMoney?.amount || 0;
+                      - const totalAmount = item?.grossSalesMoney?.amount || 0;
                       tr
                         td.text-left
                           .flex.flex-col
+                            span.font-medium #{item.name || 'Line item'}
+                            if item.description
+                              span.text-sm.text-secondary #{item.description}
+                        td.text-right #{item.quantity || 0}
+                        td.text-right $#{(baseAmount / 100).toFixed(2)}
+                        td.text-right.font-medium $#{(totalAmount / 100).toFixed(2)}
                   else
                     tr
                       td(colspan="4").text-center.py-lg
                         .text-secondary No items in this invoice
-                          span.font-medium #{item.name}
-                          if item.description
-                            span.text-sm.text-secondary #{item.description}
-                      td.text-right #{item.quantity}
-                      td.text-right $#{(parseInt(item.basePriceMoney.amount) / 100).toFixed(2)}
-                      td.text-right.font-medium $#{(parseInt(item.grossSalesMoney.amount) / 100).toFixed(2)}
                 tfoot
                   if invoice.paymentRequests[0].computedAmountMoney
                     tr.text-lg
